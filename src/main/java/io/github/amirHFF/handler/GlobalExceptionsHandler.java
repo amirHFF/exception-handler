@@ -5,6 +5,7 @@ import io.github.amirHFF.errorCode.GlobalErrorCode;
 import io.github.amirHFF.handler.dto.ExceptionDTO;
 import io.github.amirHFF.handler.impl.DefaultExceptionResponseHandler;
 import io.github.amirHFF.exceptions.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.exception.ConstraintViolationException;
@@ -17,8 +18,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.context.request.ServletWebRequest;
-import org.springframework.web.context.request.WebRequest;
+
 import java.sql.Timestamp;
 
 @ControllerAdvice
@@ -32,10 +32,10 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(value = RuntimeException.class)
-	public ResponseEntity<Object> unHandledExceptionHandler(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> unHandledExceptionHandler(Throwable throwable, HttpServletRequest webRequest) {
 
 		ExceptionDTO exceptionDTO = new ExceptionDTO();
-		exceptionDTO.setErrorUri(((ServletWebRequest) webRequest).getRequest().getRequestURL().toString());
+		exceptionDTO.setErrorUri(webRequest.getRequestURL().toString());
 		exceptionDTO.setErrorCode(ErrorCodeBuilder.build("9999"));
 		exceptionDTO.setErrorDescription(throwable.getMessage());
 		exceptionDTO.setTimestamp(new Timestamp(System.currentTimeMillis()));
@@ -45,7 +45,7 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(value = RestClientException.class)
-	public ResponseEntity<Object> handleRestClientException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleRestClientException(Throwable throwable, HttpServletRequest webRequest) {
 
 		int statusCode = 500;
 		if (throwable.getCause() instanceof RestClientResponseException) {
@@ -56,7 +56,8 @@ public class GlobalExceptionsHandler {
 
 		exceptionDTO.setErrorCode(ErrorCodeBuilder.build("9997"));
 
-		exceptionDTO.setErrorUri(((ServletWebRequest) webRequest).getRequest().getRequestURL().toString());
+
+		exceptionDTO.setErrorUri(webRequest.getRequestURL().toString());
 		exceptionDTO.setTimestamp(new Timestamp(System.currentTimeMillis()));
 		exceptionDTO.setErrorDescription(exception.getMessage());
 
@@ -66,10 +67,10 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(RestException.class)
-	public ResponseEntity<Object> handleRestException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleRestException(Throwable throwable, HttpServletRequest webRequest) {
 
 		RestException exception = (RestException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 		logger.error("specific rest exception : {}", exception.getRestMessage());
 		if (exception.getType() != null) {
@@ -79,29 +80,29 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(value = NotFoundException.class)
-	public ResponseEntity<Object> handleNotFoundException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleNotFoundException(Throwable throwable, HttpServletRequest webRequest) {
 
 		NotFoundException exception = (NotFoundException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 		return ResponseEntity.status(exception.getHttpStatus()).body(responseHandler.failureResponse(exceptionDTO, "not found exception occurred"));
 	}
 
 	@ExceptionHandler(value = BadInputException.class)
-	public ResponseEntity<Object> handleBadInputException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleBadInputException(Throwable throwable, HttpServletRequest webRequest) {
 
 		BadInputException exception = (BadInputException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 
 		return ResponseEntity.status(exception.getHttpStatus()).body(responseHandler.failureResponse(exceptionDTO, "bad input exception threw , this mean a input parameter has problem"));
 	}
 
 	@ExceptionHandler(value = DataSourceException.class)
-	public ResponseEntity<Object> handleDataSourceException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleDataSourceException(Throwable throwable, HttpServletRequest webRequest) {
 
 		DataSourceException exception = (DataSourceException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 		logger.error("monitoring alarm : {}", exception.getMonitoringMessage());
 
@@ -109,20 +110,20 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(value = InUsedException.class)
-	public ResponseEntity<Object> handleInUsedException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleInUsedException(Throwable throwable, HttpServletRequest webRequest) {
 
 		InUsedException exception = (InUsedException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 
 		return ResponseEntity.status(exception.getHttpStatus()).body(responseHandler.failureResponse(exceptionDTO, "inUsed exception occurred"));
 	}
 
 	@ExceptionHandler(value = DuplicateException.class)
-	public ResponseEntity<Object> handleDuplicateException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleDuplicateException(Throwable throwable, HttpServletRequest webRequest) {
 
 		DuplicateException exception = (DuplicateException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 
 		return ResponseEntity.status(exception.getHttpStatus()).body(responseHandler.failureResponse(exceptionDTO, "duplicate exception occurred"));
@@ -130,40 +131,40 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(value = AccessLevelException.class)
-	public ResponseEntity<Object> handleAccessLevelException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleAccessLevelException(Throwable throwable, HttpServletRequest webRequest) {
 
 		AccessLevelException exception = (AccessLevelException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 
 		return ResponseEntity.status(exception.getHttpStatus()).body(responseHandler.failureResponse(exceptionDTO, "an access exception occurred , there is no access to this resource"));
 	}
 
 	@ExceptionHandler(value = BusinessException.class)
-	public ResponseEntity<Object> handleBusinessException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleBusinessException(Throwable throwable, HttpServletRequest webRequest) {
 
 		BusinessException exception = (BusinessException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 
 		return ResponseEntity.status(exception.getHttpStatus()).body(responseHandler.failureResponse(exceptionDTO, "business exception occurred"));
 	}
 
 	@ExceptionHandler(value = BadJsonException.class)
-	public ResponseEntity<Object> handleBadJsonException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleBadJsonException(Throwable throwable, HttpServletRequest webRequest) {
 
 		BadJsonException exception = (BadJsonException) throwable;
-		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, ((ServletWebRequest) webRequest).getRequest());
+		ExceptionDTO exceptionDTO = new ExceptionDTO(exception, webRequest);
 		logger.error(throwable.getMessage(), throwable);
 
 		return ResponseEntity.status(exception.getHttpStatus()).body(responseHandler.failureResponse(exceptionDTO, "wrong json syntax exception occurred"));
 	}
 
 	@ExceptionHandler(value = NullPointerException.class)
-	public ResponseEntity<Object> handleNullPointerException(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> handleNullPointerException(Throwable throwable, HttpServletRequest webRequest) {
 
 		ExceptionDTO exceptionDTO = new ExceptionDTO();
-		exceptionDTO.setErrorUri(((ServletWebRequest) webRequest).getRequest().getRequestURL().toString());
+		exceptionDTO.setErrorUri(webRequest.getRequestURL().toString());
 		exceptionDTO.setErrorCode("9998");
 		exceptionDTO.setErrorDescription("null pointer exception");
 		exceptionDTO.setTimestamp(new Timestamp(System.currentTimeMillis()));
@@ -173,12 +174,12 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(value = MethodArgumentNotValidException.class)
-	public ResponseEntity<Object> argumentNotValidExceptionHandler(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> argumentNotValidExceptionHandler(Throwable throwable, HttpServletRequest webRequest) {
 
 		MethodArgumentNotValidException exception = (MethodArgumentNotValidException) throwable;
 		ExceptionDTO exceptionDTO = new ExceptionDTO();
 		exceptionDTO.setErrorCode(GlobalErrorCode.BAD_INPUT_PARAMETER_VALIDATION.getCode());
-		exceptionDTO.setErrorUri(((ServletWebRequest) webRequest).getRequest().getRequestURL().toString());
+		exceptionDTO.setErrorUri(webRequest.getRequestURL().toString());
 		exceptionDTO.setTimestamp(new Timestamp(System.currentTimeMillis()));
 		if (exception.getErrorCount() > 0) {
 			exceptionDTO.setErrorDescription("");
@@ -198,10 +199,10 @@ public class GlobalExceptionsHandler {
 	}
 
 	@ExceptionHandler(value = DataIntegrityViolationException.class)
-	public ResponseEntity<Object> constraintViolationExceptionHandler(Throwable throwable, WebRequest webRequest) {
+	public ResponseEntity<Object> constraintViolationExceptionHandler(Throwable throwable, HttpServletRequest webRequest) {
 
 		ExceptionDTO exceptionDTO = new ExceptionDTO();
-		exceptionDTO.setErrorUri(((ServletWebRequest) webRequest).getRequest().getRequestURL().toString());
+		exceptionDTO.setErrorUri(webRequest.getRequestURL().toString());
 		exceptionDTO.setTimestamp(new Timestamp(System.currentTimeMillis()));
 		if (throwable.getCause() instanceof ConstraintViolationException) {
 			String constraintName = ((ConstraintViolationException) throwable.getCause()).getConstraintName();

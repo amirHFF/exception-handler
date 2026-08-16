@@ -2,8 +2,8 @@ package io.github.amirHFF.handler.dto;
 
 
 import io.github.amirHFF.exceptions.ManamanRuntimeException;
+import jakarta.servlet.http.HttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 
 public class ExceptionDTO {
